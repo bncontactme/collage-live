@@ -1,0 +1,64 @@
+<script>
+  let shownImages = new Set();
+  let zIndexCounter = 1;
+
+  function addImage(fileName) {
+    const img = document.createElement('img');
+    img.src = `images/${fileName}`;
+    img.style.position = 'absolute';
+    img.style.opacity = '0';
+    img.style.zIndex = zIndexCounter++;
+    document.body.appendChild(img);
+
+    img.onload = () => {
+      // Scale based on window size: 50% to 80% of the smaller dimension
+      const minDim = Math.min(window.innerWidth, window.innerHeight);
+      const scale = 0.5 + Math.random() * 0.3; // 0.5 to 0.8
+      const baseWidth = img.naturalWidth;
+      const baseHeight = img.naturalHeight;
+      const aspect = baseWidth / baseHeight;
+
+      let finalWidth = minDim * scale;
+      let finalHeight = finalWidth / aspect;
+
+      // If height would overflow, adjust
+      if (finalHeight > window.innerHeight * 0.95) {
+        finalHeight = window.innerHeight * 0.95;
+        finalWidth = finalHeight * aspect;
+      }
+
+      // Position so image is always fully visible
+      const x = Math.random() * (window.innerWidth - finalWidth);
+      const y = Math.random() * (window.innerHeight - finalHeight);
+
+      img.style.left = `${x}px`;
+      img.style.top = `${y}px`;
+      img.style.width = `${finalWidth}px`;
+      img.style.height = `${finalHeight}px`;
+
+      img.style.opacity = '1';
+    };
+  }
+
+  async function fetchImages() {
+    try {
+      const res = await fetch('/images');
+      const files = await res.json();
+
+      files.forEach(file => {
+        if (!shownImages.has(file)) {
+          shownImages.add(file);
+          addImage(file);
+        }
+      });
+    } catch (e) {
+      console.error('Failed to fetch images:', e);
+    }
+  }
+
+  setInterval(fetchImages, 1000);
+  fetchImages();
+
+  // Optionally, you can reposition images on resize without reloading, but to avoid stutter, do nothing here.
+  // window.addEventListener('resize', () => location.reload());
+</script>
